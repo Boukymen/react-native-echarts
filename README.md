@@ -31,23 +31,21 @@ import Echarts from 'native-echarts';
 
 export default class app extends Component {
   render() {
-    const option = {
-      title: {
-          text: 'ECharts demo'
-      },
-      tooltip: {},
-      legend: {
-          data:['销量']
-      },
+    option = {
       xAxis: {
-          data: ["衬衫","羊毛衫","雪纺衫","裤子","高跟鞋","袜子"]
+        type: 'category',
+        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
       },
-      yAxis: {},
-      series: [{
-          name: '销量',
-          type: 'bar',
-          data: [5, 20, 36, 10, 10, 20]
-      }]
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          data: [820, 932, 901, 934, 1290, 1330, 1320],
+          type: 'line',
+          smooth: true
+        }
+      ]
     };
     return (
       <Echarts option={option} height={300} />
