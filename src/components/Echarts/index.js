@@ -1,44 +1,57 @@
-import React, { Component } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import renderChart from './renderChart';
-import echarts from './echarts.min';
-import { WebView } from "react-native-webview";
+import React, { Component } from 'react'
+import { View, StyleSheet, Platform, PanResponder } from 'react-native'
+import WebView from 'react-native-webview'
+import renderChart from './renderChart'
 
-export default class App extends Component {
+const SOURCE = Platform.select({
+  ios: require('./echart.html'),
+  android: { uri: 'file:///android_asset/echart.html' },
+})
 
-  constructor(props) {
-    super(props);
-    this.setNewOption = this.setNewOption.bind(this);
-  }
-  
+const panResponder = PanResponder.create({
+  onPanResponderTerminationRequest: () => false,
+  onStartShouldSetPanResponderCapture: () => true,
+})
 
-  componentWillReceiveProps(nextProps) {
-    if(nextProps.option !== this.props.option) {
-      this.refs.chart.reload();
+export default class extends Component {
+
+  getDerivedStateFromProps(nextProps) {
+    if (nextProps.option !== this.props.option) {
+      this.chart.injectJavaScript(`
+        window.postMessage(${JSON.stringify(nextProps.option)}, "*");
+        true;
+      `)
     }
-  }
-
-  setNewOption(option) {
-    this.refs.chart.postMessage(JSON.stringify(option));
   }
 
   render() {
     return (
-      <View style={{flex: 1, height: this.props.height || 400,}}>
-        <WebView
-          ref="chart"
-          scrollEnabled = {false}
-          injectedJavaScript = {renderChart(this.props)}
-          style={{
-            height: this.props.height || 400,
-            backgroundColor: this.props.backgroundColor || 'transparent'
-          }}
-          scalesPageToFit={Platform.OS !== 'ios'}
-          originWhitelist={['*']}
-          source={require('./tpl.html')}
-          onMessage={event => this.props.onPress ? this.props.onPress(JSON.parse(event.nativeEvent.data)) : null}
-        />
-      </View>
-    );
+        <View style={{ flex: 1, height: this.props.height || 400 }}>
+          <WebView
+              ref={ref => (this.chart = ref)}
+              style={{ height: this.props.height || 400 }}
+              source={SOURCE}
+              injectedJavaScript={renderChart(this.props)}
+              onMessage={event => {
+                const { type } = JSON.parse(event.nativeEvent.data)
+                if (type === 'click' && this.props.onPress) {
+                  this.props.onPress(JSON.parse(event.nativeEvent.data))
+                  return
+                }
+                if (type === 'datazoom' && this.props.onDataZoom) {
+                  this.props.onDataZoom(JSON.parse(event.nativeEvent.data))
+                  return
+                }
+              }}
+              scrollEnabled={false}
+              originWhitelist={['*']}
+              scalesPageToFit={Platform.select({ android: false })}
+              renderLoading={this.props.renderLoading}
+              // To stop parent receiving touch events and scroll etc
+              // Only required for Android (iOS already does this) but let's keep it for iOS too
+              {...panResponder.panHandlers}
+          />
+        </View>
+    )
   }
 }
