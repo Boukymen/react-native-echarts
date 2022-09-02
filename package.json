@@ -26,6 +26,6 @@
   },
   "homepage": "https://github.com/Boukymen/react-native-echarts#readme",
   "dependencies": {
-    "echarts": "5.3.2"
+    "echarts": "5.3.3"
   }
 }
